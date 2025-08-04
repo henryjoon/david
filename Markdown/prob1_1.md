@@ -35,4 +35,3 @@
             - 월 3000분 GitHub Actions
             - 2GB GitHub Packages 스토리지
             ...
-    -
