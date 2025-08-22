@@ -15,5 +15,9 @@ def home():
         hostname = ' '
     return render_template("index.html", computername=hostname)
 
+@app.route("/menu")
+def menu():
+    return render_template("menu.html")
+
 if __name__ == "__main__": 
     app.run(host="0.0.0.0", port=80, debug=True) 
