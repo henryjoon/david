@@ -8,4 +8,4 @@ fp = BytesIO()
 gTTS(text, "com", lang).write_to_fp(fp)
 encoded_audio_data = base64.b64encode(fp.getvalue())
 ```
-<img src="david.jpg" width="40%" height="30%" title="px(픽셀) 크기 설정" alt="david.jpg"></img>
+![david](../images/david.jpg)
