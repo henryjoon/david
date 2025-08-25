@@ -49,3 +49,6 @@ from flask import Flask, render_template
 import os
 import socket
 ```
+
+#### 이미지
+![david](../images/david.jpg)
