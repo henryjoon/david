@@ -1,68 +1,93 @@
 # main.py
-import csv
-import json
+# 요구사항:
+# - mission_computer_main.log 전체 출력
+# - 예외 처리 (파일 없음, 디코딩 오류 등)
+# - 콤마(,) 기준으로 날짜/시간과 메시지를 분리해 List로 변환 및 출력
+# - 리스트를 시간 역순(사전식 역순)으로 정렬하여 출력
+# - 정렬된 리스트를 Dict로 변환
+# - Dict를 mission_computer_main.json(UTF-8, JSON)으로 저장
+
+# main.py
+
+LOG_PATH = "dataFile/mission_computer_main.log"
+JSON_PATH = "dataFile/mission_computer_main.json"
+
+# 1. 파일 읽기
+def read_file(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f: # open으로 파일 열어 만든 객체를 f라는 변수에 저장함
+        return f.read()
+
+
+# 2. 리스트 변환
+def to_list(log_text: str):
+    lines = log_text.splitlines() # 줄바꿈 기준으로 잘라서 return, list형태로
+    records = []
+    for line in lines[1:]:  # 첫 줄은 헤더라 스킵
+        parts = line.split(",")
+        if len(parts) >= 3:
+            ts, _, msg = parts
+            records.append([ts.strip(), msg.strip()])
+    return records
+
+
+# 3. 리스트 정렬 (시간 역순)
+def sort_list(records):
+    return sorted(records, key=lambda x: x[0], reverse=True) 
+    # lambda: 기준 [0]이니까 첫번쨰 원소를 기준으로 둬라. 복합자료형(리스트)이라서 필요함
+    # reverse=True니까 내림차순
+
+
+# 4. 딕셔너리 변환
+def to_dict(records):
+    return {ts: msg for ts, msg in records}
+
+
+# 5. JSON 저장 (직접 문자열 생성)
+def save_json(data: dict, path: str):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("{\n")
+        items = []
+        for ts, msg in data.items():
+            ts_safe = ts.replace('"', '\\"')
+            msg_safe = msg.replace('"', '\\"')
+            items.append(f'  "{ts_safe}": "{msg_safe}"')
+        f.write(",\n".join(items))
+        f.write("\n}")
+
 
 def main():
-    log_file = "dataFile/mission_computer_main.log"
-    json_file = "dataFile/mission_computer_main.json"
-
-    # 로그 파일 읽기 + 전체 출력 (예외 처리)
     try:
-        with open(log_file, "r", encoding="utf-8") as f:
-            content = f.read()
+        # 1. 파일 읽기
+        text = read_file(LOG_PATH)
+        print("=== [원본 로그 전체 내용] ===")
+        print(text.rstrip())
+
+        # 2. 리스트 변환
+        records = to_list(text)
+        print("\n=== [리스트 [timestamp, message]] ===")
+        for rec in records:  # 한 줄씩 출력
+            print(rec)
+
+        # 3. 정렬
+        records_sorted = sort_list(records)
+        print("\n=== [시간 역순 정렬 리스트] ===")
+        for rec in records_sorted:  # 한 줄씩 출력
+            print(rec)
+
+        # 4. 딕셔너리 변환
+        data_dict = to_dict(records_sorted)
+
+        # 5. JSON 저장
+        save_json(data_dict, JSON_PATH)
+        print(f'\n✅ JSON 저장 완료: "{JSON_PATH}"')
+
     except FileNotFoundError:
-        print(f"[오류] 로그 파일 '{log_file}'을 찾을 수 없습니다.")
-        return
+        print(f'❌ 파일을 찾을 수 없습니다: "{LOG_PATH}"')
     except UnicodeDecodeError:
-        print(f"[오류] 로그 파일 '{log_file}' 디코딩 실패 (UTF-8 아님)")
-        return
-    except Exception:
-        print(f"[오류] 로그 파일 '{log_file}'을 읽는 중 예기치 못한 문제가 발생했습니다.")
-        return 
+        print(f'❌ 디코딩 오류 발생. 파일 인코딩 확인 필요: "{LOG_PATH}"')
+    except Exception as e:
+        print(f"❌ 기타 오류: {e}")
 
-    print("====== [원본 로그 파일 전체 내용] ======")
-    print(content.strip())
-    print("=====================================\n")
-
-    # log 파일 내용 토대로 [timestamp, message] 리스트 변환
-    entries = []
-    with open(log_file, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            ts = row.get("timestamp", "").strip() # 시간
-            msg = row.get("message", "").strip() # 메시지
-            entries.append([ts, msg])
-
-    print("====== [리스트 객체 출력: [날짜/시간, 메시지]] ======")
-    for e in entries:
-        print(e)
-    print("===============================================\n")
-
-    # 시간 역순(최신→과거) 사전식 정렬
-    # 현재 로그 포맷(YYYY-MM-DD HH:MM:SS)은 문자열 역순 정렬과 시간 역순이 일치함
-    sorted_entries = sorted(entries, key=lambda x: x[0], reverse=True)
-
-    print("====== [시간 역순 정렬 리스트 출력] ======")
-    for e in sorted_entries:
-        print(e)
-    print("=====================================\n")
-
-    # Dict 변환: {timestamp: message or [messages...]}
-    dict_obj = {}
-    for ts, msg in sorted_entries:
-        if ts in dict_obj:
-            if isinstance(dict_obj[ts], list):
-                dict_obj[ts].append(msg)
-            else:
-                dict_obj[ts] = [dict_obj[ts], msg]
-        else:
-            dict_obj[ts] = msg
-
-    # JSON 저장 (UTF-8, pretty)
-    with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(dict_obj, f, ensure_ascii=False, indent=2)
-
-    print(f"완료: 변환된 Dict 객체를 '{json_file}'에 저장했습니다.")
 
 if __name__ == "__main__":
     main()
