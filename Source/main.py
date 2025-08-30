@@ -7,8 +7,6 @@
 # - 정렬된 리스트를 Dict로 변환
 # - Dict를 mission_computer_main.json(UTF-8, JSON)으로 저장
 
-# main.py
-
 LOG_PATH = "dataFile/mission_computer_main.log"
 JSON_PATH = "dataFile/mission_computer_main.json"
 
