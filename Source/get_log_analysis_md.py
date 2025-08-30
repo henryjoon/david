@@ -18,12 +18,12 @@ def analyze_log(log_text: str) -> str:
     # 주요 사고 관련 이벤트 탐지
     cause_events = []
     for line in lines:
-        parts = line.split(",", 2)
+        parts = line.split(",")
         if len(parts) == 3:
             ts, _, msg = parts
-            if "Oxygen tank unstable" in msg:
+            if "unstable" in msg:
                 cause_events.append((ts, msg))
-            elif "Oxygen tank explosion" in msg:
+            elif "explosion" in msg:
                 cause_events.append((ts, msg))
 
     # 분석 내용 구성
